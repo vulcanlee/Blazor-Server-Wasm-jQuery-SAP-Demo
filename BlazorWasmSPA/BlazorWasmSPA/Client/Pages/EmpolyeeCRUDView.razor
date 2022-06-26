@@ -1,0 +1,85 @@
+﻿@page "/Empolyee"
+@inject HttpClient Http
+@using BlazorWasmSPA.Client.Models
+
+<h3>Empolyee</h3>
+
+<table id="employeeTable" style="border: 1px solid #999" cellpadding="1">
+    <thead>
+        <tr>
+            <td>Id </td>
+            <td> Name </td>
+            <td> Gender </td>
+            <td> Salary </td>
+            <td> </td>
+        </tr>
+        <tr>
+            <td></td>
+            <td><input @bind="AddEmployee.Name" /></td>
+            <td><input @bind="AddEmployee.Gender" /></td>
+            <td><input @bind="AddEmployee.Salary" /></td>
+            <td><button @onclick="async ()=>await AddAsync(AddEmployee)">Insert</button></td>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var person in employee)
+        {
+            <tr>
+                <td>@person.Id</td>
+                <td><input @bind="person.Name" /></td>
+                <td><input @bind="person.Gender" /></td>
+                <td><input @bind="person.Salary" /></td>
+                <td>
+                    <button value="Update" @onclick="async ()=>await UpdateAsync(person)">Update</button>
+                    <button value="Delete" @onclick="async ()=>await DeleteAsync(person)">Delete</button>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+@if (string.IsNullOrEmpty(Message) == false)
+{
+    <div>"@Message"</div>
+}
+
+@code {
+    public List<Employee> employee { get; set; } = new List<Employee>();
+    public Employee AddEmployee { get; set; } = new Employee();
+    public string Message { get; set; } = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        await Refresh();
+    }
+
+    public async Task Refresh()
+    {
+        employee = await Http.GetFromJsonAsync<List<Employee>>("api/GetEmployees");
+    }
+
+    public async Task AddAsync(Employee employee)
+    {
+        employee.Id = 0;
+        var response = await Http.PostAsJsonAsync("api/AddEmployee", employee);
+        var apiResult = await response.Content.ReadAsStringAsync();
+        Message = $"Employee added successfully!";
+        await Refresh();
+    }
+
+    public async Task UpdateAsync(Employee employee)
+    {
+        var response = await Http.PutAsJsonAsync("api/UpdateEmployee", employee);
+        var apiResult = await response.Content.ReadAsStringAsync();
+        Message = $"Employee modified successfully!";
+        await Refresh();
+    }
+
+    public async Task DeleteAsync(Employee employee)
+    {
+        var response = await Http.DeleteAsync("api/DeleteEmployee/" + employee.Id.ToString());
+        var apiResult = await response.Content.ReadAsStringAsync();
+        Message = $"Employee deleted successfully!";
+        await Refresh();
+    }
+}
